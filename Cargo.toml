@@ -10,6 +10,8 @@ categories = ["network-programming"]
 exclude = ["metrics"]
 
 [dependencies]
+axum = { version = "0.7.5", optional = true }
+lazy_static = { version = "1.4.0", optional = true }
 metrics = { version = "0.20", optional = true }
 tokio = { version = "1", default-features = false, features = ["sync"] }
 tower = { version = "0.4", features = ["util"] }
@@ -26,3 +28,8 @@ rand = "0.8"
 structopt = "0.3"
 tokio = { version = "1", features = ["full"] }
 tower = "0.4"
+
+
+[features]
+default = []
+axum = ["dep:axum", "dep:lazy_static"]

@@ -427,3 +427,40 @@ impl<Inner> Layer<Inner> for LoadShedLayer {
         LoadShed::new(inner, self.ewma_param, self.target)
     }
 }
+
+#[cfg(feature = "axum")]
+mod axum_integration {
+    use crate::LoadShedResponse;
+    use axum::body::Body;
+    use axum::http;
+    use axum::response::{IntoResponse, Response};
+    use lazy_static::lazy_static;
+    use std::sync::Mutex;
+
+    lazy_static! {
+        static ref OVERLOAD_BODY: Mutex<String> =
+            Mutex::new("The service is currently overloaded. Please try again later.".to_string());
+    }
+
+    pub fn set_overload_body(body: &str) {
+        *OVERLOAD_BODY.lock().unwrap() = body.to_string();
+    }
+
+    impl IntoResponse for LoadShedResponse<Response<Body>> {
+        fn into_response(self) -> Response<Body> {
+            match self {
+                LoadShedResponse::Inner(inner) => inner,
+                LoadShedResponse::Overload => {
+                    let custom_body = OVERLOAD_BODY.lock().unwrap().clone();
+                    http::Response::builder()
+                        .status(http::StatusCode::SERVICE_UNAVAILABLE)
+                        .body(Body::from(custom_body))
+                        .unwrap()
+                }
+            }
+        }
+    }
+}
+
+#[cfg(feature = "axum")]
+pub use axum_integration::*;
